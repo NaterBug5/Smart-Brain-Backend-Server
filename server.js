@@ -13,7 +13,7 @@ const db = knex({
   },
 });
 
-module.exports = db;
+export default db;
 
 const app = express();
 app.use(bodyParser.json());
@@ -45,39 +45,35 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-app.post("/register", async (req, res) => {
-  const { email, name, password } = req.body;
-
-  if (!email || !name || !password) {
-    return res.status(400).json({ message: "Incorrect form submission" });
-  }
-
-  const saltRounds = 10;
-  const hash = bcrypt.hashSync(password, saltRounds);
-
-  try {
-    const newUser = await db.transaction(async (trx) => {
-      const [loginEmail] = await trx("login")
-        .insert({ hash, email })
-        .returning("email");
-
-      const [user] = await trx("users")
-        .insert({
-          email: loginEmail.email || loginEmail,
-          name,
-          joined: new Date(),
-        })
-        .returning("*");
-
-      return user;
+const onSubmitSignIn = () => {
+  fetch("https://smart-brain-bdmg.onrender.com/register", {
+    method: "post",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: registerEmail,
+      password: registerPassword,
+      name: registerName,
+    }),
+  })
+    .then(async (response) => {
+      const text = await response.text(); // get raw text
+      console.log("Raw server response:", text);
+      if (!text) throw new Error("Empty response from server");
+      return JSON.parse(text); // parse as JSON
+    })
+    .then((userData) => {
+      if (userData) {
+        onRouteChange("signin");
+        loadUser();
+      } else {
+        window.alert("Username and/or password is invalid");
+      }
+    })
+    .catch((err) => {
+      console.error("Error during registration:", err);
+      window.alert("Something went wrong. Check console.");
     });
-
-    res.json(newUser); // Always send JSON
-  } catch (err) {
-    console.error("Register error:", err);
-    res.status(400).json({ message: "Unable to register" });
-  }
-});
+};
 
 app.get("/profile/:id", (req, res) => {
   const { id } = req.params;
