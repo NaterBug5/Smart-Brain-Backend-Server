@@ -46,16 +46,19 @@ app.post("/signin", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { email, name, password } = req.body;
-
-  if (!email || !name || !password) {
-    return res.status(400).json({ message: "Incorrect form submission" });
-  }
-
-  const saltRounds = 10;
-  const hash = bcrypt.hashSync(password, saltRounds);
-
   try {
+    const { email, name, password } = req.body;
+
+    console.log("Incoming register request:", { email, name });
+
+    if (!email || !name || !password) {
+      console.log("❌ Missing fields");
+      return res.status(400).json({ message: "Incorrect form submission" });
+    }
+
+    const saltRounds = 10;
+    const hash = bcrypt.hashSync(password, saltRounds);
+
     const newUser = await db.transaction(async (trx) => {
       const [loginEmail] = await trx("login")
         .insert({ hash, email })
@@ -72,11 +75,14 @@ app.post("/register", async (req, res) => {
       return user;
     });
 
+    console.log("✅ New user created:", newUser);
     return res.status(200).json(newUser);
   } catch (err) {
-    console.error("Register error:", err);
+    console.error("❌ Register route error:", err);
     if (!res.headersSent) {
-      return res.status(400).json({ message: "Unable to register" });
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
     }
   }
 });
