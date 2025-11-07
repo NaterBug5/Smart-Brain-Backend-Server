@@ -45,37 +45,38 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-app.post("/register", (req, res) => {
+app.post("/register", async (req, res) => {
   const { email, name, password } = req.body;
 
   if (!email || !name || !password) {
-    return res.status(400).json("Incorrect form submission");
+    return res.status(400).json({ message: "Incorrect form submission" });
   }
 
   const saltRounds = 10;
   const hash = bcrypt.hashSync(password, saltRounds);
 
-  db.transaction((trx) => {
-    trx
-      .insert({
-        hash: hash,
-        email: email,
-      })
-      .into("login")
-      .returning("email")
-      .then(async ([loginEmail]) => {
-        const user = await trx("users")
-          .returning("*")
-          .insert({
-            email: loginEmail.email || loginEmail,
-            name: name,
-            joined: new Date(),
-          });
-        res.json(user[0]);
-      })
-      .then(trx.commit)
-      .catch(trx.rollback);
-  }).catch((err) => res.status(400).json("Unable to register"));
+  try {
+    const newUser = await db.transaction(async (trx) => {
+      const [loginEmail] = await trx("login")
+        .insert({ hash, email })
+        .returning("email");
+
+      const [user] = await trx("users")
+        .insert({
+          email: loginEmail.email || loginEmail,
+          name,
+          joined: new Date(),
+        })
+        .returning("*");
+
+      return user;
+    });
+
+    res.json(newUser); // Always send JSON
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(400).json({ message: "Unable to register" });
+  }
 });
 
 app.get("/profile/:id", (req, res) => {
