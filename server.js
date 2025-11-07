@@ -49,24 +49,27 @@ app.post("/signin", async (req, res) => {
 app.post("/register", async (req, res) => {
   const { email, name, password } = req.body;
   if (!email || !name || !password)
-    return res.status(400).json("Incorrect form submission");
+    return res.status(400).json({ error: "Incorrect form submission" });
 
   const hash = bcrypt.hashSync(password, 10);
 
   try {
-    const [loginEmail] = await db.transaction(async (trx) => {
+    const user = await db.transaction(async (trx) => {
       const [login] = await trx("login")
         .insert({ hash, email })
         .returning("email");
-      const [user] = await trx("users")
+
+      const [newUser] = await trx("users")
         .insert({ email: login.email || login, name, joined: new Date() })
         .returning("*");
-      return [login.email, user];
+
+      return newUser; // ✅ return user directly
     });
 
-    res.json(loginEmail[1][0]); // user
+    res.json(user); // ✅ return JSON object
   } catch (err) {
-    res.status(400).json("Unable to register");
+    console.error(err);
+    res.status(400).json({ error: "Unable to register" });
   }
 });
 
