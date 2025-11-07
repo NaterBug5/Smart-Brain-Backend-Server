@@ -7,13 +7,13 @@ import knex from "knex";
 const db = knex({
   client: "pg",
   connection: {
-    connectionString: process.env.DATABASE_URL,
+    connectionString: `http://smart_brain_db_ccg3_user:nLJ3a8pzLYV5eWTvuq2ei0QpOCaT7SKv@dpg-d471f6idbo4c739jmgcg-a/smart_brain_db_ccg3`,
     ssl: { rejectUnauthorized: false },
-    host: process.env.DATABASE_HOST,
+    host: dpg - d471f6idbo4c739jmgcg - a,
     port: 5432,
-    user: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PW,
-    database: process.env.DATABASE_DB,
+    user: smart_brain_db_ccg3_user,
+    password: nLJ3a8pzLYV5eWTvuq2ei0QpOCaT7SKv,
+    database: smart_brain_db_ccg3,
   },
 });
 
