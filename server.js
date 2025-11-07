@@ -46,14 +46,14 @@ app.post("/signin", async (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const { email, name, password } = req.body; // ✅ destructure first
+  const { email, name, password } = req.body;
 
   if (!email || !name || !password) {
     return res.status(400).json("Incorrect form submission");
   }
 
   const saltRounds = 10;
-  const hash = bcrypt.hashSync(password, saltRounds); // ✅ now password exists
+  const hash = bcrypt.hashSync(password, saltRounds);
 
   db.transaction((trx) => {
     trx
