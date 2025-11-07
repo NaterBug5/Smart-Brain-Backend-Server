@@ -1,0 +1,26 @@
+{
+  "name": "facial-recognition-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "body-parser": "^2.2.0",
+    "clarifai": "^2.9.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "knex": "^3.1.0",
+    "nodemon": "^3.1.10",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "express": "^5.1.0"
+  }
+}
