@@ -7,12 +7,13 @@ import knex from "knex";
 const db = knex({
   client: "pg",
   connection: {
-    host: "127.0.0.1",
-    user: "postgres",
-    password: "test",
-    database: "smart-brain",
+    connectionString:
+      "postgresql://smart_brain_db_ccg3_user:nLJ3a8pzLYV5eWTvuq2ei0QpOCaT7SKv@dpg-d471f6idbo4c739jmgcg-a/smart_brain_db_ccg3",
+    ssl: { rejectUnauthorized: false }, // needed for Render Postgres
   },
 });
+
+module.exports = db;
 
 const app = express();
 app.use(bodyParser.json());
