@@ -7,13 +7,12 @@ import knex from "knex";
 const db = knex({
   client: "pg",
   connection: {
-    connectionString: `http://smart_brain_db_ccg3_user:nLJ3a8pzLYV5eWTvuq2ei0QpOCaT7SKv@dpg-d471f6idbo4c739jmgcg-a/smart_brain_db_ccg3`,
-    ssl: { rejectUnauthorized: false },
-    host: dpg - d471f6idbo4c739jmgcg - a,
+    host: "dpg-d471f6idbo4c739jmgcg-a",
     port: 5432,
-    user: smart_brain_db_ccg3_user,
-    password: nLJ3a8pzLYV5eWTvuq2ei0QpOCaT7SKv,
-    database: smart_brain_db_ccg3,
+    user: "smart_brain_db_ccg3_user",
+    password: "nLJ3a8pzLYV5eWTvuq2ei0QpOCaT7SKv",
+    database: "smart_brain_db_ccg3",
+    ssl: { rejectUnauthorized: false },
   },
 });
 
@@ -47,36 +46,28 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-app.post("/register", (req, res) => {
-  const saltRounds = 10;
-  const hash = bcrypt.hashSync(password, saltRounds);
-
+app.post("/register", async (req, res) => {
   const { email, name, password } = req.body;
-  if (!email || !name || !password) {
+  if (!email || !name || !password)
     return res.status(400).json("Incorrect form submission");
-  }
 
-  db.transaction((trx) => {
-    trx
-      .insert({
-        hash: hash,
-        email: email,
-      })
-      .into("login")
-      .returning("email")
-      .then(async ([loginEmail]) => {
-        const user = await trx("users")
-          .returning("*")
-          .insert({
-            email: loginEmail.email || loginEmail,
-            name: name,
-            joined: new Date(),
-          });
-        res.json(user[0]);
-      })
-      .then(trx.commit)
-      .catch(trx.rollback);
-  }).catch((err) => res.status(400).json("Unable to register"));
+  const hash = bcrypt.hashSync(password, 10);
+
+  try {
+    const [loginEmail] = await db.transaction(async (trx) => {
+      const [login] = await trx("login")
+        .insert({ hash, email })
+        .returning("email");
+      const [user] = await trx("users")
+        .insert({ email: login.email || login, name, joined: new Date() })
+        .returning("*");
+      return [login.email, user];
+    });
+
+    res.json(loginEmail[1][0]); // user
+  } catch (err) {
+    res.status(400).json("Unable to register");
+  }
 });
 
 app.get("/profile/:id", (req, res) => {
