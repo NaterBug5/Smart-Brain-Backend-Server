@@ -45,35 +45,41 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-const onSubmitSignIn = () => {
-  fetch("https://smart-brain-bdmg.onrender.com/register", {
-    method: "post",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: registerEmail,
-      password: registerPassword,
-      name: registerName,
-    }),
-  })
-    .then(async (response) => {
-      const text = await response.text(); // get raw text
-      console.log("Raw server response:", text);
-      if (!text) throw new Error("Empty response from server");
-      return JSON.parse(text); // parse as JSON
-    })
-    .then((userData) => {
-      if (userData) {
-        onRouteChange("signin");
-        loadUser();
-      } else {
-        window.alert("Username and/or password is invalid");
-      }
-    })
-    .catch((err) => {
-      console.error("Error during registration:", err);
-      window.alert("Something went wrong. Check console.");
+app.post("/register", async (req, res) => {
+  const { email, name, password } = req.body;
+
+  if (!email || !name || !password) {
+    return res.status(400).json({ message: "Incorrect form submission" });
+  }
+
+  const saltRounds = 10;
+  const hash = bcrypt.hashSync(password, saltRounds);
+
+  try {
+    const newUser = await db.transaction(async (trx) => {
+      const [loginEmail] = await trx("login")
+        .insert({ hash, email })
+        .returning("email");
+
+      const [user] = await trx("users")
+        .insert({
+          email: loginEmail.email || loginEmail,
+          name,
+          joined: new Date(),
+        })
+        .returning("*");
+
+      return user;
     });
-};
+
+    return res.status(200).json(newUser);
+  } catch (err) {
+    console.error("Register error:", err);
+    if (!res.headersSent) {
+      return res.status(400).json({ message: "Unable to register" });
+    }
+  }
+});
 
 app.get("/profile/:id", (req, res) => {
   const { id } = req.params;
@@ -96,6 +102,13 @@ app.put("/image", (req, res) => {
       res.json(entries[0].entries);
     })
     .catch((err) => res.status(400).json("Unable to get entries"));
+});
+
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  if (!res.headersSent) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 });
 
 app.listen(3000, () => {
