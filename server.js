@@ -49,10 +49,7 @@ app.post("/register", async (req, res) => {
   try {
     const { email, name, password } = req.body;
 
-    console.log("Incoming register request:", { email, name });
-
     if (!email || !name || !password) {
-      console.log("❌ Missing fields");
       return res.status(400).json({ message: "Incorrect form submission" });
     }
 
@@ -75,10 +72,8 @@ app.post("/register", async (req, res) => {
       return user;
     });
 
-    console.log("✅ New user created:", newUser);
     return res.status(200).json(newUser);
   } catch (err) {
-    console.error("❌ Register route error:", err);
     if (!res.headersSent) {
       return res
         .status(500)
@@ -108,13 +103,6 @@ app.put("/image", (req, res) => {
       res.json(entries[0].entries);
     })
     .catch((err) => res.status(400).json("Unable to get entries"));
-});
-
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  if (!res.headersSent) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
 });
 
 app.listen(3000, () => {
